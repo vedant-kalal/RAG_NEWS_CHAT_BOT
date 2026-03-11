@@ -1,18 +1,14 @@
 from langchain_huggingface import HuggingFaceEndpoint,ChatHuggingFace,HuggingFaceEmbeddings
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 load_dotenv()   
 
 
-def load_llm():
-    llm = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="text-generation",
-    temperature=0.4,
-    )
-    return llm
-
 def load_model():
-    model = ChatHuggingFace(llm = load_llm())
+    model = ChatGroq(
+        model="openai/gpt-oss-120b", 
+        temperature=0,
+    )
     return model
 
 def load_embedding_model():

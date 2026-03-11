@@ -6,12 +6,12 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
 
 class ChatBot:
-    def __init__(self,vector_store_path):
-        self.vector_store_path = vector_store_path
+    def __init__(self, collection_name="news_chatbot"):
+        self.collection_name = collection_name
         self.chat_history = chat_history
         self.user_chat_history = []
         self.current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.ai_response = Ai_Response(vector_store_path=vector_store_path)
+        self.ai_response = Ai_Response(collection_name=collection_name)
     
     def Run_ChatBot(self):
         try:

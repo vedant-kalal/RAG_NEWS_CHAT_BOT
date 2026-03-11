@@ -4,6 +4,11 @@ from tkinter import filedialog
 from src.loaders.pdf_loader import PDFLoader 
 from src.embeddings.vector_store import VectorStoreManager
 from src.chat_bot.chat_bot_design import ChatBot
+from src.embeddings.vector_db import create_tables, is_pdf_loaded, add_pdf_record
+from dotenv import load_dotenv
+
+load_dotenv()
+create_tables()
 
 def select_pdf_file():
     root = tk.Tk()
@@ -17,10 +22,12 @@ def select_pdf_file():
     root.destroy()
     return file_path
 
-def get_vector_store_path(pdf_name):
-
-    clean_name = pdf_name.replace(".", "_") + "_db"
-    return os.path.join("data", "embeddings_db", clean_name)
+def get_unique_pdf_name(pdf_path):
+    import hashlib
+    pdf_name = os.path.basename(pdf_path)
+    clean_name = pdf_name.replace(".", "_")
+    path_hash = hashlib.md5(os.path.abspath(pdf_path).encode()).hexdigest()[:8]
+    return f"{clean_name}_{path_hash}"
 
 def main():
     while True:
@@ -39,27 +46,35 @@ def main():
                 continue
             
             print(f"Selected: {pdf_path}")
-            pdf_loader = PDFLoader()
-            documents = pdf_loader.process_pdf(pdf_path)
             
-            pdf_name = os.path.basename(pdf_path)
-            vector_store_path = get_vector_store_path(pdf_name)
+            unique_name = get_unique_pdf_name(pdf_path)
             
-            print(f"Creating vector store at: {vector_store_path}")
-            vector_store_manager = VectorStoreManager(vector_store_path=vector_store_path)
-            vector_store_manager.process_documents(documents)
-            print("PDF loaded and vector store created successfully!")
+            if is_pdf_loaded(unique_name):
+                print(f"'{os.path.basename(pdf_path)}' is already loaded in the database. Skipping processing.")
+            else:
+                pdf_loader = PDFLoader()
+                documents = pdf_loader.process_pdf(pdf_path)
+                
+                print(f"Creating vector store collection: {unique_name}")
+                vector_store_manager = VectorStoreManager(collection_name=unique_name)
+                vector_store_manager.process_documents(documents)
+                add_pdf_record(unique_name)
+                print("PDF loaded and vector store created successfully!")
 
         elif option == "2":
-            pdf_name = input("Enter the name of the PDF (e.g., sample.pdf): ")
-            vector_store_path = get_vector_store_path(pdf_name)
+            print("Please select the PDF file you want to chat with...")
+            pdf_path = select_pdf_file()
+            if not pdf_path:
+                print("No file selected.")
+                continue
+
+            unique_name = get_unique_pdf_name(pdf_path)
             
-            if os.path.exists(vector_store_path):
-                chatbot = ChatBot(vector_store_path=vector_store_path)
+            if is_pdf_loaded(unique_name):
+                chatbot = ChatBot(collection_name=unique_name)
                 chatbot.Run_ChatBot()
             else:
-                print(f"No vector store found for '{pdf_name}' at '{vector_store_path}'.")
-                print("Please upload the PDF first using Option 1.")
+                print(f"No vector store found for this PDF. Please upload it first using Option 1.")
         
         elif option == "3":
             print("Exiting...")

@@ -7,18 +7,17 @@ from langchain_core.prompts import ChatPromptTemplate,MessagesPlaceholder
 chat_history = []
 
 class Augmentation:
-    def __init__(self,vector_store_path):
-        self.vector_store_path = vector_store_path
+    def __init__(self, collection_name="news_chatbot"):
         self.model = load_model()
-        self.retriever = Retrieval(vector_store_path=vector_store_path).retriever
+        self.retriever = Retrieval(collection_name=collection_name).retriever
         self.chat_history = chat_history
-        
 
         self.prompt_template = ChatPromptTemplate.from_messages([
 
             ("system",
                 """
-        You are a helpful NEWS CHATBOT that answers questions based only on the news PDF context.
+        You are a helpful NEWS CHATBOT. You can engage in normal conversation (like greetings or answering "who are you").
+        When the user asks questions about specific topics, theories, or facts, answer based ONLY on the provided news PDF context.
 
         Follow these STRICT rules:
 
@@ -27,20 +26,22 @@ class Augmentation:
         - Fix spelling errors.
         - Format the answer cleanly.
 
-        2) If the answer is NOT present in the context, reply with exactly one of these:
+        2) If the user's question is a factual inquiry and the answer is NOT present in the context, reply with exactly one of these:
         - "I don't know"
         - "I am not sure"
         - "Topic related to '{question}' is not available in the context"
 
-        3) Provide the answer **directly**.  
+        3) If the user is just saying hi or asking general conversational questions, you MAY answer them naturally without relying on the context.
+
+        4) Provide the answer **directly**.  
         DO NOT write phrases like:
         - "According to the context"
         - "Based on the given information"
 
-        4) Never reveal your thoughts or reasoning.  
+        5) Never reveal your thoughts or reasoning.  
         Never justify how you found the answer.
 
-        5) Final output format:
+        6) Final output format:
         ANSWER :- "<your answer>"
         """
             ),
